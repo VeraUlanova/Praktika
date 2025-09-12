@@ -16,7 +16,7 @@ from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart
 from aiogram.types import Message
 
-TOKEN = "8216779825:AAGJnqK8lxYNWm5oCtTswIYLnenDVN1OyMQ" # задаём токен, полученный от @BotFather.
+TOKEN = "Ваш_токен_API" # задаём токен, полученный от @BotFather.
 
 dp = Dispatcher()                                        # определяем диспетчер, который будет декоратором (обработчиком) для асинхронных функций получающих и отправляющих сообщения в телеграм-бота
 
