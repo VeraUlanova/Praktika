@@ -1,6 +1,24 @@
-#Обновлённый чат-бот с несколькими ответами:
+"""
+Обновлённый чат-бот с несколькими ответами адаптированный под телеграм:
+Перед запуском программы в Терминале надо дать установить библиотеки:
+pip install aiogram
+pip install spacy
+"""
 
 import spacy
+import asyncio
+import logging
+import sys
+
+from aiogram import Bot, Dispatcher, html
+from aiogram.client.default import DefaultBotProperties
+from aiogram.enums import ParseMode
+from aiogram.filters import CommandStart
+from aiogram.types import Message
+
+TOKEN = "8216779825:AAGJnqK8lxYNWm5oCtTswIYLnenDVN1OyMQ" # задаём токен, полученный от @BotFather.
+
+dp = Dispatcher()                                        # определяем диспетчер, который будет декоратором (обработчиком) для асинхронных функций получающих и отправляющих сообщения в телеграм-бота
 
 # Загружаем русскую модель spaCy
 try:
@@ -58,25 +76,39 @@ def generate_response(keywords):
         print("Ошибка при генерации ответа:", e)
         return "Произошла ошибка при формировании ответа."
 
-def main():
-    print("Чат-бот: Привет! Я бот с морфоанализом. Напиши что-нибудь или 'пока' для выхода.")
-    while True:
-        try:
-            user_input = input("Вы: ")
-            if user_input.lower() in ["пока", "выход", "до свидания"]:
-                print("Чат-бот:", responses.get("пока"))
-                break
 
-            keywords = recognize_keywords(user_input)
-            response = generate_response(keywords)
-            print("Чат-бот:", response)
+@dp.message(CommandStart())
+async def command_start_handler(message: Message) -> None:
+    """
+    Этот обработчик обрабатывает сообщения при запуске чат-бота при команде `/start`
+    """
+    text_responses = "Я бот с морфоанализом. Напиши что-нибудь или 'пока' для выхода."
+    await message.answer(f"Привет, {html.bold(message.from_user.full_name)}! {text_responses}")
 
-        except KeyboardInterrupt:
-            print("\nЧат-бот: Пока!")
-            break
-        except Exception as e:
-            print("Произошла ошибка в основном цикле:", e)
+
+@dp.message()
+async def echo_handler(message: Message) -> None:
+    """
+    Обработка диалога. Получаем запрос пользователя методом message.text и отправляем ответ при помощи message.answer()
+    """
+    try:
+        user_input = str(message.text)
+        if user_input.lower() in ["пока", "выход", "до свидания"]:
+            text_responses = f"{html.bold(message.from_user.full_name)}, пока!"
+            await message.answer(text_responses)
+        keywords = recognize_keywords(user_input)
+        text_responses = str(generate_response(keywords))
+        await message.answer(text_responses)
+    except Exception as e:
+        print("Произошла ошибка в основном цикле:", e)
+
+async def main() -> None:
+    # Инициализация экземпляра бота, с параметрами, которые будут использоваться во всех вызовах API
+    bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
+
+    # и запуск экземпляра "Диспетчера" который будет обрабатывать все события бота
+    await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    main()
-
+    logging.basicConfig(level=logging.INFO, stream=sys.stdout)
+    asyncio.run(main())
